@@ -1,0 +1,54 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+The Stata code provided appears to be a script for a data analysis pipeline which involves data loading, manipulation, calculations, and exporting results to an Excel file. Translating this script to R using Tidyverse involves a few steps. Tidyverse is a collection of R packages designed for data science, which includes packages for data manipulation, visualization, and import/export among others [Source 9](https://learn.microsoft.com/en-us/fabric/data-science/r-use-tidyverse).
+
+Firstly, we need to translate the local macros in Stata to variables in R. In Stata, local macros are temporary variables that can be used within the program where they are defined. In R, we simply define these as variables. For example:
+
+```{R}
+programwonum <- "Cannabis"
+program <- "72_Cannabis"
+cohort <- "C1"
+seasonyr <- "F23"
+yrcohort <- "2023-2024"
+presurveycompletion <- "preprogram_survey_ad_v_5"
+postsurveycompletion <- "post_program_survey__v_13"
+```
+
+Next, we have to translate the `use` command in Stata which is used to load datasets. The equivalent in R can be achieved using the `read_dta` function from the haven package, which is part of the Tidyverse and can read Stata files [Source 0](https://haven.tidyverse.org/). 
+
+```{R}
+library(haven)
+data <- read_dta(paste0("X:\\OHSU Shared\\Restricted\\RA\\A_ORPRN\\Projects\\Oregon ECHO Network\\5_Data\\", yrcohort, "\\", program, "_", cohort, "_", seasonyr, "\\D_CleanData\\Clean_", programwonum, "_", cohort, "_", seasonyr, ".dta"))
+```
+
+For the `copy` command in Stata which is used to copy files, we can use the `file.copy` function in R. 
+
+```{R}
+file.copy("X:\\OHSU Shared\\Restricted\\RA\\A_ORPRN\\Staff Folders\\Carbuccia Abbott\\Template_Reporting_ProjectECHO.xlsx", paste0("X:\\OHSU Shared\\Restricted\\RA\\A_ORPRN\\Staff Folders\\Carbuccia Abbott\\", program, "_", cohort, "_", seasonyr, "_Reporting_", Sys.Date(), ".xlsx"), overwrite = TRUE)
+```
+
+The `putexcel` command in Stata is used to write results to Excel files. In R, we can use the `write.xlsx` function from the openxlsx package. 
+
+To generate new variables, the `gen` command in Stata is used. In R, we simply create a new variable in the dataframe. For example, `gen sum_attended = 0` in Stata can be translated to `data$sum_attended <- 0` in R.
+
+The `foreach` loop in Stata can be translated to a `for` loop in R. For example:
+
+```{R}
+attend <- c("session1", "session2", "session3", "session4", "session5", "session6")
+for (var in attend) {
+    data$sum_attended[data[, var] == 1] <- data$sum_attended + 1
+}
+```
+
+For the `sum` command in Stata, we can use the `sum` function in R. For example, `sum approved if approved == 1` can be translated to `sum(data$approved[data$approved == 1])` in R.
+
+The `tab` command in Stata is used to create frequency tables. In R, we can use the `table` function. For example, `tab approved sum_attended` can be translated to `table(data$approved, data$sum_attended)` in R.
+
+The `keep if` command in Stata is used to keep observations if they meet a certain condition. In R, we can use the subset function. For example, `keep if approved == 1` can be translated to `data <- subset(data, approved == 1)` in R.
+
+The `egen` command in Stata is used to create a new variable that is some combination of the values of other variables. In R, we can use various functions depending on the specific operation. For example, `egen x = count(1), by(county state)` can be translated to `data$x <- with(data, ave(seq_along(county), county, state, FUN = length))` in R.
+
+The `rename` command in Stata is used to rename variables. In R, we can use the `rename` function from the dplyr package. For example, `rename (`presurveycompletion' `postsurveycompletion') (complete_pre complete_post)` can be translated to `data <- rename(data, complete_pre = presurveycompletion, complete_post = postsurveycompletion)` in
